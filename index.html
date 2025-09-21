@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Swap N Stay - Ghana's Agribusiness Marketplace</title>
+  <meta name="theme-color" content="#10b981">
+  <meta name="description" content="Swap N Stay - Ghana's Agribusiness Marketplace">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==">
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-storage-compat.js"></script>
+
+  <!-- UI Libraries -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.0/dist/full.min.css" rel="stylesheet" type="text/css" />
+
+  <style>
+    body {
+      background-color: #f0f2f5;
+      background-image: 
+        url('data:image/svg+xml;utf8,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><path d="M0 0 L100 0 L100 100 Z" fill="%23FFD700" fill-opacity="0.03"/><path d="M0 0 L0 100 L100 100 Z" fill="%2300FF00" fill-opacity="0.03"/></svg>'),
+        url('data:image/svg+xml;utf8,<svg width="150" height="150" xmlns="http://www.w3.org/2000/svg"><circle cx="75" cy="75" r="40" fill="%230000FF" fill-opacity="0.03"/></svg>'),
+        url('data:image/svg+xml;utf8,<svg width="80" height="80" xmlns="http://www.w3.org/2000/svg"><rect width="80" height="80" fill="%23FF0000" fill-opacity="0.03"/></svg>');
+      background-position: left 10px top 10px, right 20px bottom 20px, left 50% bottom 100px;
+      background-repeat: no-repeat;
+      background-size: 100px, 150px, 80px;
+    }
+    .toast { position: fixed; top: 20px; right: 20px; z-index: 1000; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body class="min-h-screen p-4">
+  <div class="container mx-auto max-w-6xl">
+    <div class="card bg-base-100 shadow-xl p-6 md:p-10">
+      <h1 class="text-4xl font-bold text-center mb-6 text-base-content">Swap N Stay</h1>
+
+      <nav id="nav" class="tabs tabs-boxed mb-4 mx-auto">
+        <a href="#" id="view-products-link" class="tab tab-active">Products</a>
+        <a href="#" id="edit-profile-link" class="tab">Profile</a>
+      </nav>
+
+      <!-- Auth UI -->
+      <div id="auth-buttons" class="text-center mb-6">
+        <button id="login-btn" class="btn btn-primary mr-2">Login</button>
+        <button id="signup-btn" class="btn btn-secondary">Sign Up</button>
+      </div>
+
+      <div id="user-info" class="text-center mb-6 hidden">
+        <span id="user-name" class="mr-4 font-semibold"></span>
+        <button id="logout-btn" class="btn btn-error btn-sm">Logout</button>
+      </div>
+
+      <!-- Auth Modals -->
+      <div id="auth-modals">
+        <!-- Login Modal -->
+        <div id="login-modal" class="modal hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+          <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+              <h3 class="text-lg font-medium text-gray-900">Login to Your Account</h3>
+              <form class="mt-4" id="login-form">
+                <div class="mb-4">
+                  <input type="email" id="login-email" placeholder="Email" class="w-full px-3 py-2 border rounded-md" required>
+                </div>
+                <div class="mb-4">
+                  <input type="password" id="login-password" placeholder="Password" class="w-full px-3 py-2 border rounded-md" required>
+                </div>
+                <div class="flex justify-between items-center">
+                  <button type="button" id="close-login" class="px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
+                  <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md">Login</button>
+                </div>
+                <p class="mt-4 text-center">
+                  Don't have an account?
+                  <button type="button" id="show-signup" class="text-green-600">Sign Up</button>
+                </p>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Signup Modal -->
+        <div id="signup-modal" class="modal hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+          <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+              <h3 class="text-lg font-medium text-gray-900">Create an Account</h3>
+              <form class="mt-4" id="signup-form">
+                <div class="mb-4"><input type="text" id="signup-name" placeholder="Full Name" class="w-full px-3 py-2 border rounded-md" required></div>
+                <div class="mb-4"><input type="email" id="signup-email" placeholder="Email" class="w-full px-3 py-2 border rounded-md" required></div>
+                <div class="mb-4"><input type="tel" id="signup-phone" placeholder="Phone Number" class="w-full px-3 py-2 border rounded-md" required></div>
+                <div class="mb-4"><input type="password" id="signup-password" placeholder="Password" class="w-full px-3 py-2 border rounded-md" required></div>
+                <div class="mb-4"><input type="password" id="signup-confirm-password" placeholder="Confirm Password" class="w-full px-3 py-2 border rounded-md" required></div>
+                <div class="flex justify-between items-center">
+                  <button type="button" id="close-signup" class="px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
+                  <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md">Sign Up</button>
+                </div>
+                <p class="mt-4 text-center">
+                  Already have an account?
+                  <button type="button" id="show-login" class="text-green-600">Login</button>
+                </p>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Products and Profile -->
+      <div id="products-view">
+        <!-- ... (Keep your existing products-view content exactly as you had it) ... -->
+      </div>
+
+      <div id="profile-view" class="hidden">
+        <!-- ... (Keep your existing profile-view content) ... -->
+      </div>
+
+      <!-- 🚫 Removed edit modal and pencil feature -->
+
+      <!-- ✅ Toast Box with Close Button -->
+      <div id="messageBox" class="toast toast-end z-50 hidden">
+        <div id="messageText" class="alert flex justify-between items-center">
+          <span></span>
+          <button id="messageClose" class="btn btn-xs btn-ghost">✖</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="firebase.js"></script>
+  <script src="auth.js"></script>
+  <script src="products.js"></script>
+  <script src="app.js"></script>
+  <script src="input.js"></script>
+</body>
+</html>
