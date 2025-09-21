@@ -3,17 +3,289 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - Swap N Pay</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Admin Dashboard - Swap N Stay</title>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+
+    <!-- Chart.js for analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- UI Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.0/dist/full.min.css" rel="stylesheet" type="text/css" />
+
+    <style>
+        body {
+            background-color: #f8fafc;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .stat-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        .dashboard-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+        .section-header {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 20px;
+            margin: 0;
+        }
+        .data-grid {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+        .metric-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .growth-positive { color: #10b981; }
+        .growth-negative { color: #ef4444; }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+    </style>
 </head>
-<body>
-    <h1>Admin Panel</h1>
-    <div id="admin-content">
-        <button id="view-users">View Users</button>
-        <button id="view-products">View Products</button>
-        <div id="admin-data"></div>
+<body class="p-4">
+    <div class="container mx-auto max-w-7xl space-y-6">
+        <!-- Admin Header -->
+        <div class="dashboard-section">
+            <div class="flex justify-between items-center p-6">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">🌱 Swap N Stay Admin Dashboard</h1>
+                    <p class="text-gray-600">Farm Smart. Trade Smarter</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="admin-user" class="text-gray-600 bg-gray-100 px-3 py-1 rounded-full"></span>
+                    <button id="logout-btn" class="btn btn-error btn-sm">Logout</button>
+                    <a href="index.html" class="btn btn-primary btn-sm">Main Site</a>
+                    <button onclick="generateReports()" class="btn btn-secondary btn-sm">📊 Generate Reports</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real-time Stats Overview -->
+        <div class="data-grid">
+            <div class="stat-card bg-white" style="border-left-color: #10b981;">
+                <div class="p-6">
+                    <div class="text-2xl font-bold text-gray-800" id="total-users">0</div>
+                    <div class="text-gray-600">Registered Users</div>
+                    <div class="text-sm growth-positive" id="user-growth">+0% this month</div>
+                </div>
+            </div>
+            <div class="stat-card bg-white" style="border-left-color: #3b82f6;">
+                <div class="p-6">
+                    <div class="text-2xl font-bold text-gray-800" id="total-products">0</div>
+                    <div class="text-gray-600">Active Listings</div>
+                    <div class="text-sm growth-positive" id="product-growth">+0% this month</div>
+                </div>
+            </div>
+            <div class="stat-card bg-white" style="border-left-color: #f59e0b;">
+                <div class="p-6">
+                    <div class="text-2xl font-bold text-gray-800" id="market-value">GHS 0</div>
+                    <div class="text-gray-600">Total Market Value</div>
+                    <div class="text-sm growth-positive" id="value-growth">+0% this month</div>
+                </div>
+            </div>
+            <div class="stat-card bg-white" style="border-left-color: #8b5cf6;">
+                <div class="p-6">
+                    <div class="text-2xl font-bold text-gray-800" id="monthly-revenue">GHS 0</div>
+                    <div class="text-gray-600">Monthly Revenue</div>
+                    <div class="text-sm growth-positive" id="revenue-growth">+0% this month</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Left Column -->
+            <div class="space-y-6">
+                <!-- Market Analytics -->
+                <div class="dashboard-section">
+                    <h2 class="section-header">📈 Market Analytics & Trends</h2>
+                    <div class="p-6">
+                        <div class="chart-container">
+                            <canvas id="marketTrendsChart"></canvas>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mt-4">
+                            <div class="metric-box">
+                                <div class="text-lg font-semibold" id="avg-product-value">GHS 0</div>
+                                <div class="text-sm text-gray-600">Average Product Value</div>
+                            </div>
+                            <div class="metric-box">
+                                <div class="text-lg font-semibold" id="transaction-volume">0</div>
+                                <div class="text-sm text-gray-600">Monthly Transactions</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category Breakdown -->
+                <div class="dashboard-section">
+                    <h2 class="section-header">🏷️ Category Performance</h2>
+                    <div class="p-6">
+                        <div class="chart-container">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Regional Distribution -->
+                <div class="dashboard-section">
+                    <h2 class="section-header">🗺️ Regional Market Analysis</h2>
+                    <div class="p-6">
+                        <div class="chart-container">
+                            <canvas id="regionalChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="space-y-6">
+                <!-- Financial Overview -->
+                <div class="dashboard-section">
+                    <h2 class="section-header">💰 Financial Performance</h2>
+                    <div class="p-6">
+                        <div class="chart-container">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 mt-4">
+                            <div class="metric-box">
+                                <div class="text-lg font-semibold" id="total-revenue">GHS 0</div>
+                                <div class="text-sm text-gray-600">Total Revenue</div>
+                            </div>
+                            <div class="metric-box">
+                                <div class="text-lg font-semibold" id="operating-costs">GHS 0</div>
+                                <div class="text-sm text-gray-600">Operating Costs</div>
+                            </div>
+                            <div class="metric-box">
+                                <div class="text-lg font-semibold" id="net-profit">GHS 0</div>
+                                <div class="text-sm text-gray-600">Net Profit</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Demographics -->
+                <div class="dashboard-section">
+                    <h2 class="section-header">👥 User Demographics</h2>
+                    <div class="p-6">
+                        <div class="chart-container">
+                            <canvas id="userDemographicsChart"></canvas>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mt-4">
+                            <div class="metric-box">
+                                <div class="text-lg font-semibold" id="active-users">0%</div>
+                                <div class="text-sm text-gray-600">Active Users Rate</div>
+                            </div>
+                            <div class="metric-box">
+                                <div class="text-lg font-semibold" id="conversion-rate">0%</div>
+                                <div class="text-sm text-gray-600">Conversion Rate</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Investor Metrics -->
+                <div class="dashboard-section">
+                    <h2 class="section-header">📊 Investor Dashboard</h2>
+                    <div class="p-6">
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div class="metric-box">
+                                <div class="text-lg font-semibold" id="valuation">GHS 0</div>
+                                <div class="text-sm text-gray-600">Company Valuation</div>
+                            </div>
+                            <div class="metric-box">
+                                <div class="text-lg font-semibold" id="growth-rate">0%</div>
+                                <div class="text-sm text-gray-600">Monthly Growth Rate</div>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="investmentChart"></canvas>
+                        </div>
+                        <div class="mt-4">
+                            <h4 class="font-semibold mb-2">Key Performance Indicators</h4>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span>Customer Acquisition Cost:</span>
+                                    <span class="font-semibold">GHS 0.00</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Lifetime Value:</span>
+                                    <span class="font-semibold">GHS 0.00</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>ROI:</span>
+                                    <span class="font-semibold growth-positive">0%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Row: Detailed Reports -->
+        <div class="dashboard-section">
+            <h2 class="section-header">📋 Detailed Reports & Export</h2>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="metric-box">
+                        <h4 class="font-semibold mb-3">Sales Reports</h4>
+                        <div class="space-y-2 text-sm">
+                            <div>Daily Sales: <span class="float-right font-semibold">GHS 0.00</span></div>
+                            <div>Weekly Sales: <span class="float-right font-semibold">GHS 0.00</span></div>
+                            <div>Monthly Sales: <span class="float-right font-semibold">GHS 0.00</span></div>
+                        </div>
+                        <button class="btn btn-sm btn-outline mt-3 w-full">Export CSV</button>
+                    </div>
+
+                    <div class="metric-box">
+                        <h4 class="font-semibold mb-3">User Analytics</h4>
+                        <div class="space-y-2 text-sm">
+                            <div>New Users: <span class="float-right font-semibold">0</span></div>
+                            <div>Active Users: <span class="float-right font-semibold">0</span></div>
+                            <div>Retention Rate: <span class="float-right font-semibold">0%</span></div>
+                        </div>
+                        <button class="btn btn-sm btn-outline mt-3 w-full">Export Report</button>
+                    </div>
+
+                    <div class="metric-box">
+                        <h4 class="font-semibold mb-3">Market Research</h4>
+                        <div class="space-y-2 text-sm">
+                            <div>Market Share: <span class="float-right font-semibold">0%</span></div>
+                            <div>Competition Index: <span class="float-right font-semibold">0/100</span></div>
+                            <div>Growth Potential: <span class="float-right growth-positive font-semibold">High</span></div>
+                        </div>
+                        <button class="btn btn-sm btn-outline mt-3 w-full">Download PDF</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Load JavaScript -->
     <script src="firebase.js"></script>
     <script src="admin.js"></script>
+    <script src="fix-inputs.js"></script>
 </body>
 </html>
