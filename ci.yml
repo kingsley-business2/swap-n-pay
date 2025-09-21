@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Get your repository code
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # Step 2: Run HTML/CSS/JS lint checks
+    - name: Lint HTML, CSS, and JS
+      run: |
+        npx htmlhint "**/*.html" || true
+        npx stylelint "**/*.css" || true
+        npx eslint "**/*.js" || true
