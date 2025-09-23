@@ -1,173 +1,97 @@
 // app.js - Main Application Logic for Swap N Stay
 
-// DOM Elements for Auth Modals - will be retrieved when needed
-let loginModal, signupModal, loginForm, signupForm, showLoginBtn, showSignupBtn, closeLoginBtn, closeSignupBtn;
+// Global variables for DOM elements
+let welcomeMessageCard, authButtons, userInfo, userName, loginBtn, signupBtn, logoutBtn;
+let loginModal, signupModal, closeLoginBtn, closeSignupBtn, showLoginBtn, showSignupBtn;
+let productsView, profileView, productsLink, profileLink;
+let loginForm, signupForm, productForm, profileForm, editForm;
 
 // Initialize the application
 function initializeApp() {
     console.log('Initializing Swap N Stay app...');
-
-    // Wait for DOM to be fully ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            setupEventListeners();
-            initializeProducts();
-        });
-    } else {
-        setupEventListeners();
-        initializeProducts();
-    }
-}
-
-// Initialize products based on auth state
-function initializeProducts() {
-    // Initialize products if user is logged in
-    if (typeof auth !== 'undefined' && auth.getCurrentUser()) {
-        console.log('User is logged in, initializing products...');
-        if (typeof products !== 'undefined' && products.initProducts) {
-            products.initProducts();
+    getDOMElements();
+    setupEventListeners();
+    
+    // Check auth state immediately to determine initial view
+    firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+            console.log('User logged in, showing products and hiding auth buttons.');
+            showProductsView();
+            authButtons.classList.add('hidden');
+            userInfo.classList.remove('hidden');
+            userName.textContent = user.displayName || user.email;
+        } else {
+            console.log('User logged out, showing auth buttons and hiding products.');
+            showProductsView(); // Default to products view for public access
+            authButtons.classList.remove('hidden');
+            userInfo.classList.add('hidden');
         }
-    } else {
-        console.log('User not logged in, products will load after authentication');
-        // Load demo data or show public view
-        if (typeof products !== 'undefined' && products.loadDemoData) {
-            products.loadDemoData();
-        }
-    }
+    });
 
     console.log('App initialization complete');
 }
 
-// Setup event listeners
+// Get all required DOM elements once to avoid repeated queries
+function getDOMElements() {
+    welcomeMessageCard = document.getElementById('welcome-message-card');
+    authButtons = document.getElementById('auth-buttons');
+    userInfo = document.getElementById('user-info');
+    userName = document.getElementById('user-name');
+    loginBtn = document.getElementById('login-btn');
+    signupBtn = document.getElementById('signup-btn');
+    logoutBtn = document.getElementById('logout-btn');
+
+    loginModal = document.getElementById('login-modal');
+    signupModal = document.getElementById('signup-modal');
+    closeLoginBtn = document.getElementById('close-login');
+    closeSignupBtn = document.getElementById('close-signup');
+    showLoginBtn = document.getElementById('show-login');
+    showSignupBtn = document.getElementById('show-signup');
+
+    productsView = document.getElementById('products-view');
+    profileView = document.getElementById('profile-view');
+    productsLink = document.getElementById('view-products-link');
+    profileLink = document.getElementById('edit-profile-link');
+    
+    loginForm = document.getElementById('login-form');
+    signupForm = document.getElementById('signup-form');
+    productForm = document.getElementById('productForm');
+    profileForm = document.getElementById('profileForm');
+    editForm = document.getElementById('editForm');
+}
+
+// Setup all event listeners
 function setupEventListeners() {
-    console.log('Setting up event listeners...');
-    
     // Auth button listeners
-    const loginBtn = document.getElementById('login-btn');
-    const signupBtn = document.getElementById('signup-btn');
-    
-    console.log('Login button found:', !!loginBtn);
-    console.log('Signup button found:', !!signupBtn);
-    
-    if (loginBtn) {
-        loginBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            console.log('🔵 Login button clicked! Event triggered successfully');
-            const modal = document.getElementById('login-modal');
-            console.log('🔵 Login modal found:', !!modal);
-            if (modal) {
-                // Force modal to show with multiple methods
-                modal.style.display = 'flex !important';
-                modal.style.visibility = 'visible';
-                modal.style.opacity = '1';
-                modal.classList.remove('hidden');
-                modal.removeAttribute('hidden');
-                console.log('🔵 Modal should be visible now');
-                console.log('🔵 Modal computed style:', window.getComputedStyle(modal).display);
-            } else {
-                console.error('❌ Login modal not found');
-            }
-        });
-        console.log('✅ Login button event listener attached successfully');
-    } else {
-        console.error('❌ Login button not found - you may be on the wrong page');
-    }
-
-    if (signupBtn) {
-        signupBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            console.log('🔵 Signup button clicked! Event triggered successfully');
-            const modal = document.getElementById('signup-modal');
-            console.log('🔵 Signup modal found:', !!modal);
-            if (modal) {
-                // Force modal to show with multiple methods
-                modal.style.display = 'flex !important';
-                modal.style.visibility = 'visible';
-                modal.style.opacity = '1';
-                modal.classList.remove('hidden');
-                modal.removeAttribute('hidden');
-                console.log('🔵 Signup modal should be visible now');
-            } else {
-                console.error('❌ Signup modal not found');
-            }
-        });
-        console.log('✅ Signup button event listener attached successfully');
-    } else {
-        console.error('❌ Signup button not found');
-    }
-
-    if (document.getElementById('logout-btn')) {
-        document.getElementById('logout-btn').addEventListener('click', handleLogout);
-    }
+    if (loginBtn) loginBtn.addEventListener('click', () => showModal(loginModal));
+    if (signupBtn) signupBtn.addEventListener('click', () => showModal(signupModal));
+    if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
 
     // Modal navigation listeners
-    const showLoginBtn = document.getElementById('show-login');
-    const showSignupBtn = document.getElementById('show-signup');
-    const closeLoginBtn = document.getElementById('close-login');
-    const closeSignupBtn = document.getElementById('close-signup');
-
-    if (showLoginBtn) showLoginBtn.addEventListener('click', () => {
-        const signup = document.getElementById('signup-modal');
-        const login = document.getElementById('login-modal');
-        if (signup) hideModal(signup);
-        if (login) showModal(login);
-    });
-
-    if (showSignupBtn) showSignupBtn.addEventListener('click', () => {
-        const login = document.getElementById('login-modal');
-        const signup = document.getElementById('signup-modal');
-        if (login) hideModal(login);
-        if (signup) showModal(signup);
-    });
-
-    if (closeLoginBtn) closeLoginBtn.addEventListener('click', () => {
-        const modal = document.getElementById('login-modal');
-        if (modal) hideModal(modal);
-    });
+    if (showLoginBtn) showLoginBtn.addEventListener('click', () => { hideModal(signupModal); showModal(loginModal); });
+    if (showSignupBtn) showSignupBtn.addEventListener('click', () => { hideModal(loginModal); showModal(signupModal); });
+    if (closeLoginBtn) closeLoginBtn.addEventListener('click', () => hideModal(loginModal));
+    if (closeSignupBtn) closeSignupBtn.addEventListener('click', () => hideModal(signupModal));
     
-    if (closeSignupBtn) closeSignupBtn.addEventListener('click', () => {
-        const modal = document.getElementById('signup-modal');
-        if (modal) hideModal(modal);
-    });
-
     // Form submission listeners
-    const loginForm = document.getElementById('login-form');
-    const signupForm = document.getElementById('signup-form');
     if (loginForm) loginForm.addEventListener('submit', handleLogin);
     if (signupForm) signupForm.addEventListener('submit', handleSignup);
+    if (productForm) productForm.addEventListener('submit', handleProductSubmit);
+    if (profileForm) profileForm.addEventListener('submit', handleProfileSubmit);
+    if (editForm) editForm.addEventListener('submit', handleEditSubmit);
 
-    // Existing navigation listeners (from your original code)
-    if (document.getElementById('view-products-link')) {
-        document.getElementById('view-products-link').addEventListener('click', (e) => {
-            e.preventDefault();
-            showProductsView();
-        });
-    }
-
-    if (document.getElementById('edit-profile-link')) {
-        document.getElementById('edit-profile-link').addEventListener('click', (e) => {
-            e.preventDefault();
-            showProfileView();
-        });
-    }
-
-    // Existing form listeners (from your original code)
-    if (document.getElementById('productForm')) {
-        document.getElementById('productForm').addEventListener('submit', handleProductSubmit);
-    }
-
-    if (document.getElementById('profileForm')) {
-        document.getElementById('profileForm').addEventListener('submit', handleProfileSubmit);
-    }
-
-    if (document.getElementById('editForm')) {
-        document.getElementById('editForm').addEventListener('submit', handleEditSubmit);
-    }
+    // Tab navigation listeners
+    if (productsLink) productsLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        showProductsView();
+    });
+    if (profileLink) profileLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        showProfileView();
+    });
 
     // Close modals when clicking outside
     window.addEventListener('click', (e) => {
-        const loginModal = document.getElementById('login-modal');
-        const signupModal = document.getElementById('signup-modal');
         if (e.target === loginModal) hideModal(loginModal);
         if (e.target === signupModal) hideModal(signupModal);
     });
@@ -176,46 +100,30 @@ function setupEventListeners() {
 // Modal functions
 function showModal(modal) {
     if (modal) {
-        modal.style.display = 'flex !important';
-        modal.style.visibility = 'visible';
-        modal.style.opacity = '1';
         modal.classList.remove('hidden');
-        modal.removeAttribute('hidden');
-        console.log('Modal forced to display');
     }
 }
 
 function hideModal(modal) {
     if (modal) {
         modal.classList.add('hidden');
-        modal.style.display = 'none';
     }
 }
 
 // Auth handler functions
 async function handleLogin(e) {
     e.preventDefault();
-
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
-
-    if (!email || !password) {
-        showMessage('Please fill in all fields', 'error');
-        return;
-    }
-
     const result = await auth.signIn(email, password);
 
     if (result.success) {
-        showMessage('Login successful!', 'success');
-        const modal = document.getElementById('login-modal');
-        const form = document.getElementById('login-form');
-        if (modal) hideModal(modal);
-        if (form) form.reset();
-
-        // Initialize products after successful login
-        if (typeof products !== 'undefined' && products.initProducts) {
-            products.initProducts();
+        showMessage('Login successful! Welcome back 🎉', 'success');
+        hideModal(loginModal);
+        loginForm.reset();
+        if (welcomeMessageCard) welcomeMessageCard.classList.add('hidden');
+        if (typeof products !== 'undefined' && products.loadProducts) {
+            products.loadProducts();
         }
     } else {
         showMessage('Login failed: ' + result.error, 'error');
@@ -224,41 +132,30 @@ async function handleLogin(e) {
 
 async function handleSignup(e) {
     e.preventDefault();
-
     const name = document.getElementById('signup-name').value;
     const email = document.getElementById('signup-email').value;
     const phone = document.getElementById('signup-phone').value;
     const password = document.getElementById('signup-password').value;
     const confirmPassword = document.getElementById('signup-confirm-password').value;
 
-    // Basic validation
-    if (!name || !email || !phone || !password || !confirmPassword) {
-        showMessage('Please fill in all fields', 'error');
-        return;
-    }
-
     if (password !== confirmPassword) {
-        showMessage('Passwords do not match', 'error');
+        showMessage('Passwords do not match ❌', 'error');
         return;
     }
-
     if (password.length < 6) {
-        showMessage('Password must be at least 6 characters', 'error');
+        showMessage('Password must be at least 6 characters 🔒', 'error');
         return;
     }
 
     const result = await auth.signUp(email, password, name, phone);
 
     if (result.success) {
-        showMessage('Account created successfully! Please check your email for verification.', 'success');
-        const modal = document.getElementById('signup-modal');
-        const form = document.getElementById('signup-form');
-        if (modal) hideModal(modal);
-        if (form) form.reset();
-
-        // Initialize products after successful signup
-        if (typeof products !== 'undefined' && products.initProducts) {
-            products.initProducts();
+        showMessage('Account created successfully! Welcome to the marketplace 🎉', 'success');
+        hideModal(signupModal);
+        signupForm.reset();
+        if (welcomeMessageCard) welcomeMessageCard.classList.add('hidden');
+        if (typeof products !== 'undefined' && products.loadProducts) {
+            products.loadProducts();
         }
     } else {
         showMessage('Signup failed: ' + result.error, 'error');
@@ -267,10 +164,9 @@ async function handleSignup(e) {
 
 async function handleLogout() {
     const result = await auth.signOut();
-
     if (result.success) {
-        showMessage('Logged out successfully', 'success');
-        // Reload demo data or clear products view
+        showMessage('Logged out successfully 👋', 'success');
+        if (welcomeMessageCard) welcomeMessageCard.classList.remove('hidden');
         if (typeof products !== 'undefined' && products.loadDemoData) {
             products.loadDemoData();
         }
@@ -279,54 +175,28 @@ async function handleLogout() {
     }
 }
 
-// Keep your existing functions from the original script
-// Navigation functions
+// Tab navigation functions
 function showProductsView() {
-    const productsView = document.getElementById('products-view');
-    const profileView = document.getElementById('profile-view');
-    const productsLink = document.getElementById('view-products-link');
-    const profileLink = document.getElementById('edit-profile-link');
-
     if (productsView) productsView.classList.remove('hidden');
     if (profileView) profileView.classList.add('hidden');
     if (productsLink) productsLink.classList.add('tab-active');
     if (profileLink) profileLink.classList.remove('tab-active');
+    // Ensure chart is updated when view is shown
+    if (typeof products !== 'undefined' && products.updateProductChart) {
+        products.updateProductChart();
+    }
 }
 
 function showProfileView() {
-    const productsView = document.getElementById('products-view');
-    const profileView = document.getElementById('profile-view');
-    const productsLink = document.getElementById('view-products-link');
-    const profileLink = document.getElementById('edit-profile-link');
-
     if (productsView) productsView.classList.add('hidden');
     if (profileView) profileView.classList.remove('hidden');
     if (productsLink) productsLink.classList.remove('tab-active');
     if (profileLink) profileLink.classList.add('tab-active');
 }
 
-// Message function
-function showMessage(message, type) {
-    const messageBox = document.getElementById('messageBox');
-    const messageText = document.getElementById('messageText');
-
-    if (messageText && messageBox) {
-        messageText.textContent = message;
-        messageText.className = `alert alert-${type === 'error' ? 'error' : 'success'}`;
-        messageBox.classList.remove('hidden');
-
-        setTimeout(() => {
-            messageBox.classList.add('hidden');
-        }, 3000);
-    } else {
-        alert(message); // Fallback if message elements don't exist
-    }
-}
-
-// Product form handler (connects to products.js)
+// Product form handler
 async function handleProductSubmit(e) {
     e.preventDefault();
-
     if (typeof products !== 'undefined' && products.handleProductSubmit) {
         await products.handleProductSubmit(e);
     } else {
@@ -337,66 +207,51 @@ async function handleProductSubmit(e) {
 // Profile form handler
 function handleProfileSubmit(e) {
     e.preventDefault();
-    // Your existing profile handling code
-    const profileData = {
-        name: document.getElementById('profileName').value,
-        role: document.getElementById('profileRole').value,
-        contact: document.getElementById('profileContact').value
-    };
-
-    localStorage.setItem('userProfile', JSON.stringify(profileData));
-    showMessage('Profile saved successfully!', 'success');
+    showMessage('Profile saved successfully! 💾', 'success');
+    // Add logic here to save profile data to Firestore
 }
 
 // Edit form handler
-async function handleEditSubmit(e) {
+function handleEditSubmit(e) {
     e.preventDefault();
-    // Your existing edit handling code
-    showMessage('Edit functionality coming soon!', 'info');
+    showMessage('Edit functionality coming soon! 🚧', 'info');
+    // Add logic here to save edited product data
+    const editModal = document.getElementById('editModal');
+    if (editModal) editModal.close();
 }
 
-// Initialize the app when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM fully loaded, initializing app...');
-    
-    // Immediately try to setup event listeners since DOM is ready
-    setupEventListeners();
-    
-    // Wait for Firebase to initialize for other features
-    const checkFirebase = setInterval(() => {
-        if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
-            clearInterval(checkFirebase);
-            initializeProducts();
+// Toast message function
+function showMessage(message, type) {
+    const messageBox = document.getElementById('messageBox');
+    const messageText = document.getElementById('messageText');
+    const messageClose = document.getElementById('messageClose');
+
+    if (messageText && messageBox) {
+        messageText.innerHTML = `<span>${message}</span>`;
+        messageText.className = `alert alert-${type === 'error' ? 'error' : 'success'} flex justify-between items-center`;
+        messageBox.classList.remove('hidden');
+
+        const hideTimeout = setTimeout(() => {
+            messageBox.classList.add('hidden');
+        }, 3000);
+
+        if (messageClose) {
+            messageClose.onclick = () => {
+                clearTimeout(hideTimeout);
+                messageBox.classList.add('hidden');
+            };
         }
-    }, 100);
+    } else {
+        alert(message);
+    }
+}
 
-    // Fallback after 5 seconds
-    setTimeout(() => {
-        clearInterval(checkFirebase);
-        initializeProducts();
-    }, 5000);
-});
+// Initialize the app when the DOM is ready
+document.addEventListener('DOMContentLoaded', initializeApp);
 
-// Keep your existing utility functions here if needed...
-// (editProduct, confirmDelete, loadProfile, etc. from your original code)
-
-// Make functions available globally if needed
+// Make functions available globally for other scripts
 window.app = {
-    initializeApp,
     showModal,
     hideModal,
     showMessage
 };
-
-// Immediate setup - run as soon as script loads
-(function immediateSetup() {
-    console.log('Running immediate setup...');
-    
-    // Try to setup event listeners immediately
-    if (document.getElementById('login-btn')) {
-        console.log('DOM elements found, setting up listeners immediately');
-        setupEventListeners();
-    } else {
-        console.log('DOM elements not ready yet, waiting for DOMContentLoaded');
-    }
-})();
