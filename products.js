@@ -1,4 +1,3 @@
-
 // products.js - Product Management System for Swap N Stay
 
 // Global products state
@@ -32,13 +31,14 @@ async function loadProducts() {
         });
 
         displayProducts();
-        updateProductChart();
+        updateProductChart(); // Ensure chart is updated after loading
         showLoadingState(false);
 
     } catch (error) {
         console.error('Error loading products:', error);
         showLoadingState(false);
-        loadDemoData();
+        // Fallback to demo data on error
+        loadDemoData(); 
     }
 }
 
@@ -126,7 +126,6 @@ async function handleProductSubmit(e) {
         
         if (window.app) window.app.showMessage('Product added successfully!', 'success');
         document.getElementById('productForm').reset();
-        document.getElementById('add-product-modal').classList.add('hidden');
         
         loadProducts(); // Reload products
     } catch (error) {
@@ -139,7 +138,7 @@ async function handleProductSubmit(e) {
 function viewProduct(productId) {
     const product = products.find(p => p.id === productId);
     if (product) {
-        alert(`Product: ${product.name}\nCategory: ${product.category}\nPrice: GHS ${product.price}\nDescription: ${product.description || 'No description'}`);
+        if (window.app) window.app.showMessage(`Product: ${product.name}\nCategory: ${product.category}\nPrice: GHS ${product.price}\nDescription: ${product.description || 'No description'}`, 'info');
     }
 }
 
@@ -261,16 +260,15 @@ function showLoadingState(show) {
     }
 }
 
-// Setup product-specific event listeners
+// Setup product-specific event listeners (now handled in app.js)
 function setupProductEventListeners() {
-    // Product form submission is handled in app.js
-    console.log('Product event listeners set up');
+    console.log('Product event listeners are handled by app.js');
 }
 
 // Initialize when auth state changes
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
-        console.log('User authenticated, initializing products...');
+        console.log('User authenticated, loading products...');
         initProducts();
     } else {
         console.log('User not authenticated, loading demo data...');
@@ -283,6 +281,8 @@ window.products = {
     initProducts,
     loadProducts,
     handleProductSubmit,
-    loadDemoData
+    loadDemoData,
+    updateProductChart // Make this public so app.js can use it
 };
 
+            
