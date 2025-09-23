@@ -1,138 +1,364 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Swap N Stay - Ghana's Agribusiness Marketplace</title>
-  <meta name="theme-color" content="#10b981">
-  <meta name="description" content="Swap N Stay - Ghana's Agribusiness Marketplace">
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swap N Stay - Ghana's Agribusiness Marketplace</title>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-storage-compat.js"></script>
+    <meta name="theme-color" content="#10b981">
+    <meta name="description" content="Swap N Stay - Ghana's Agribusiness Marketplace">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==">
 
-  <!-- UI Libraries -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.0/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-storage-compat.js"></script>
 
-  <style>
-    body {
-      background-color: #f0f2f5;
-      background-image: 
-        url('data:image/svg+xml;utf8,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><path d="M0 0 L100 0 L100 100 Z" fill="%23FFD700" fill-opacity="0.03"/><path d="M0 0 L0 100 L100 100 Z" fill="%2300FF00" fill-opacity="0.03"/></svg>'),
-        url('data:image/svg+xml;utf8,<svg width="150" height="150" xmlns="http://www.w3.org/2000/svg"><circle cx="75" cy="75" r="40" fill="%230000FF" fill-opacity="0.03"/></svg>'),
-        url('data:image/svg+xml;utf8,<svg width="80" height="80" xmlns="http://www.w3.org/2000/svg"><rect width="80" height="80" fill="%23FF0000" fill-opacity="0.03"/></svg>');
-      background-position: left 10px top 10px, right 20px bottom 20px, left 50% bottom 100px;
-      background-repeat: no-repeat;
-      background-size: 100px, 150px, 80px;
-    }
-    .toast { position: fixed; top: 20px; right: 20px; z-index: 1000; }
-    .hidden { display: none; }
-  </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.0/dist/full.min.css" rel="stylesheet" type="text/css" />
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.min.js"></script>
+
+    <style>
+        body {
+            background-color: #f0f2f5; /* WhatsApp-like light grey */
+            background-image: 
+                url('data:image/svg+xml;utf8,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><path d="M0 0 L100 0 L100 100 Z" fill="%23FFD700" fill-opacity="0.03"/><path d="M0 0 L0 100 L100 100 Z" fill="%2300FF00" fill-opacity="0.03"/></svg>'),
+                url('data:image/svg+xml;utf8,<svg width="150" height="150" xmlns="http://www.w3.org/2000/svg"><circle cx="75" cy="75" r="40" fill="%230000FF" fill-opacity="0.03"/></svg>'),
+                url('data:image/svg+xml;utf8,<svg width="80" height="80" xmlns="http://www.w3.org/2000/svg"><rect width="80" height="80" fill="%23FF0000" fill-opacity="0.03"/></svg>');
+            background-position: 
+                left 10px top 10px, 
+                right 20px bottom 20px, 
+                left 50% bottom 100px;
+            background-repeat: no-repeat;
+            background-size: 100px, 150px, 80px;
+        }
+        .toast { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            z-index: 1000;
+        }
+        .hidden { 
+            display: none; 
+        }
+        /* New styles for the welcome message */
+        .welcome-card {
+            background-color: #d1f7e0; /* A light green background */
+            border-left: 5px solid #10b981;
+        }
+    </style>
 </head>
 <body class="min-h-screen p-4">
-  <div class="container mx-auto max-w-6xl">
-    <div class="card bg-base-100 shadow-xl p-6 md:p-10">
-      <h1 class="text-4xl font-bold text-center mb-6 text-base-content">Swap N Stay</h1>
-
-      <nav id="nav" class="tabs tabs-boxed mb-4 mx-auto">
-        <a href="#" id="view-products-link" class="tab tab-active">Products</a>
-        <a href="#" id="edit-profile-link" class="tab">Profile</a>
-      </nav>
-
-      <!-- Auth UI -->
-      <div id="auth-buttons" class="text-center mb-6">
-        <button id="login-btn" class="btn btn-primary mr-2">Login</button>
-        <button id="signup-btn" class="btn btn-secondary">Sign Up</button>
-      </div>
-
-      <div id="user-info" class="text-center mb-6 hidden">
-        <span id="user-name" class="mr-4 font-semibold"></span>
-        <button id="logout-btn" class="btn btn-error btn-sm">Logout</button>
-      </div>
-
-      <!-- Auth Modals -->
-      <div id="auth-modals">
-        <!-- Login Modal -->
-        <div id="login-modal" class="modal hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-          <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div class="mt-3">
-              <h3 class="text-lg font-medium text-gray-900">Login to Your Account</h3>
-              <form class="mt-4" id="login-form">
-                <div class="mb-4">
-                  <input type="email" id="login-email" placeholder="Email" class="w-full px-3 py-2 border rounded-md" required>
-                </div>
-                <div class="mb-4">
-                  <input type="password" id="login-password" placeholder="Password" class="w-full px-3 py-2 border rounded-md" required>
-                </div>
-                <div class="flex justify-between items-center">
-                  <button type="button" id="close-login" class="px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
-                  <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md">Login</button>
-                </div>
-                <p class="mt-4 text-center">
-                  Don't have an account?
-                  <button type="button" id="show-signup" class="text-green-600">Sign Up</button>
-                </p>
-              </form>
+    <div class="container mx-auto max-w-6xl">
+        <div class="card bg-base-100 shadow-xl p-6 md:p-10">
+            <h1 class="text-4xl font-bold text-center mb-6 text-base-content">Swap N Stay</h1>
+            
+            <div id="welcome-message-card" class="welcome-card p-4 rounded-md mb-6 text-center">
+                <p class="text-lg font-semibold text-gray-800">Bridging the gap between Ghanaian farmers and markets.</p>
+                <p class="text-xl font-bold text-green-700 mt-2">Farm Smart, Trade Smart</p>
             </div>
-          </div>
-        </div>
 
-        <!-- Signup Modal -->
-        <div id="signup-modal" class="modal hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-          <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div class="mt-3">
-              <h3 class="text-lg font-medium text-gray-900">Create an Account</h3>
-              <form class="mt-4" id="signup-form">
-                <div class="mb-4"><input type="text" id="signup-name" placeholder="Full Name" class="w-full px-3 py-2 border rounded-md" required></div>
-                <div class="mb-4"><input type="email" id="signup-email" placeholder="Email" class="w-full px-3 py-2 border rounded-md" required></div>
-                <div class="mb-4"><input type="tel" id="signup-phone" placeholder="Phone Number" class="w-full px-3 py-2 border rounded-md" required></div>
-                <div class="mb-4"><input type="password" id="signup-password" placeholder="Password" class="w-full px-3 py-2 border rounded-md" required></div>
-                <div class="mb-4"><input type="password" id="signup-confirm-password" placeholder="Confirm Password" class="w-full px-3 py-2 border rounded-md" required></div>
-                <div class="flex justify-between items-center">
-                  <button type="button" id="close-signup" class="px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
-                  <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md">Sign Up</button>
-                </div>
-                <p class="mt-4 text-center">
-                  Already have an account?
-                  <button type="button" id="show-login" class="text-green-600">Login</button>
-                </p>
-              </form>
+            <nav id="nav" class="tabs tabs-boxed mb-4 mx-auto">
+                <a href="#" id="view-products-link" class="tab tab-active">Products</a>
+                <a href="#" id="edit-profile-link" class="tab">Profile</a>
+            </nav>
+
+            <div id="auth-buttons" class="text-center mb-6">
+                <button id="login-btn" class="btn btn-primary mr-2">Login</button>
+                <button id="signup-btn" class="btn btn-secondary">Sign Up</button>
             </div>
-          </div>
+
+            <div id="user-info" class="text-center mb-6 hidden">
+                <span id="user-name" class="mr-4 font-semibold"></span>
+                <button id="logout-btn" class="btn btn-error btn-sm">Logout</button>
+            </div>
+
+            <div id="auth-modals">
+                <div id="login-modal" class="modal hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+                    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                        <div class="mt-3">
+                            <h3 class="text-lg font-medium text-gray-900">Login to Your Account</h3>
+                            <form class="mt-4" id="login-form">
+                                <div class="mb-4">
+                                    <input type="email" id="login-email" placeholder="Email" class="w-full px-3 py-2 border rounded-md" required>
+                                </div>
+                                <div class="mb-4">
+                                    <input type="password" id="login-password" placeholder="Password" class="w-full px-3 py-2 border rounded-md" required>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <button type="button" id="close-login" class="px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
+                                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md">Login</button>
+                                </div>
+                                <p class="mt-4 text-center">Don't have an account? <button type="button" id="show-signup" class="text-green-600">Sign Up</button></p>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="signup-modal" class="modal hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+                    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                        <div class="mt-3">
+                            <h3 class="text-lg font-medium text-gray-900">Create an Account</h3>
+                            <form class="mt-4" id="signup-form">
+                                <div class="mb-4">
+                                    <input type="text" id="signup-name" placeholder="Full Name" class="w-full px-3 py-2 border rounded-md" required>
+                                </div>
+                                <div class="mb-4">
+                                    <input type="email" id="signup-email" placeholder="Email" class="w-full px-3 py-2 border rounded-md" required>
+                                </div>
+                                <div class="mb-4">
+                                    <input type="tel" id="signup-phone" placeholder="Phone Number (e.g., 0550123456)" class="w-full px-3 py-2 border rounded-md" required>
+                                </div>
+                                <div class="mb-4">
+                                    <input type="password" id="signup-password" placeholder="Password" class="w-full px-3 py-2 border rounded-md" required>
+                                </div>
+                                <div class="mb-4">
+                                    <input type="password" id="signup-confirm-password" placeholder="Confirm Password" class="w-full px-3 py-2 border rounded-md" required>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <button type="button" id="close-signup" class="px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
+                                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md">Sign Up</button>
+                                </div>
+                                <p class="mt-4 text-center">Already have an account? <button type="button" id="show-login" class="text-green-600">Login</button></p>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="products-view">
+                <div class="mb-8 p-4 bg-base-200 rounded-lg">
+                    <h2 class="text-xl font-semibold mb-4 text-base-content">Overview</h2>
+                    <canvas id="statusChart" class="w-full" style="max-height: 400px;"></canvas>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="table w-full bg-base-100">
+                        <thead>
+                            <tr>
+                                <th class="text-base-content">Product</th>
+                                <th class="text-base-content">Quantity</th>
+                                <th class="text-base-content">Location</th>
+                                <th class="text-base-content">Status</th>
+                                <th class="text-base-content">User</th>
+                                <th class="text-base-content text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productList">
+                            <tr>
+                                <td colspan="6" class="text-center text-base-content italic" id="loadingMessage">Loading products...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="noProductsMessage" class="hidden p-4 text-center text-base-content italic mt-4">
+                    No products found. Add a new one to get started.
+                </div>
+
+                <form id="productForm" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+                    <div>
+                        <label class="label">
+                            <span class="label-text text-base-content">Product Name</span>
+                        </label>
+                        <input type="text" id="productName" placeholder="e.g. Tomatoes" class="input input-bordered w-full" required>
+                    </div>
+                    <div>
+                        <label class="label">
+                            <span class="label-text text-base-content">Quantity</span>
+                        </label>
+                        <input type="number" id="quantity" placeholder="e.g. 500" class="input input-bordered w-full" required>
+                    </div>
+                    <div>
+                        <label class="label">
+                            <span class="label-text text-base-content">Price (GHS)</span>
+                        </label>
+                        <input type="number" id="productPrice" placeholder="e.g. 120" class="input input-bordered w-full" required>
+                    </div>
+                    <div>
+                        <label class="label">
+                            <span class="label-text text-base-content">Location</span>
+                        </label>
+                        <input type="text" id="location" placeholder="e.g. Farm, Warehouse" class="input input-bordered w-full" required>
+                    </div>
+                    <div>
+                        <label class="label">
+                            <span class="label-text text-base-content">Category</span>
+                        </label>
+                        <select id="productCategory" class="select select-bordered w-full" required>
+                            <option value="">Select Category</option>
+                            <option value="Crops">Crops</option>
+                            <option value="Livestock">Livestock</option>
+                            <option value="Aquaculture">Aquaculture</option>
+                            <option value="Poultry">Poultry</option>
+                            <option value="Equipment">Farm Equipment</option>
+                            <option value="Chemicals">Farm Chemicals</option>
+                            <option value="Processed">Processed Foods</option>
+                            <option value="Feed">Animal Feed</option>
+                            <option value="Logistics">Logistics & Shipping</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label">
+                            <span class="label-text text-base-content">Status</span>
+                        </label>
+                        <select id="status" class="select select-bordered w-full" required>
+                            <option value="">Select Status</option>
+                            <option value="Harvested">Harvested</option>
+                            <option value="Processed">Processed</option>
+                            <option value="Shipped">Shipped</option>
+                            <option value="Delivered">Delivered</option>
+                            <option value="Available">Available</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="label">
+                            <span class="label-text text-base-content">Description</span>
+                        </label>
+                        <textarea id="productDescription" placeholder="Product details..." class="textarea textarea-bordered w-full" rows="3"></textarea>
+                    </div>
+                    <div>
+                        <label class="label">
+                            <span class="label-text text-base-content">Product Image</span>
+                        </label>
+                        <input type="file" id="productImage" accept="image/*" class="file-input file-input-bordered w-full">
+                    </div>
+                    <div>
+                        <label class="label">
+                            <span class="label-text text-base-content">Product Video</span>
+                        </label>
+                        <input type="file" id="productVideo" accept="video/*" class="file-input file-input-bordered w-full">
+                    </div>
+                    <div class="md:col-span-2 flex justify-center mt-4">
+                        <button type="submit" class="btn btn-primary w-full md:w-auto">Add Product</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="profile-view" class="hidden">
+                <h2 class="text-2xl font-bold mb-4 text-base-content">Your Profile</h2>
+                <form id="profileForm" class="space-y-4">
+                    <div>
+                        <label class="label">
+                            <span class="label-text text-base-content">Name</span>
+                        </label>
+                        <input type="text" id="profileName" placeholder="Your Name" class="input input-bordered w-full">
+                    </div>
+                    <div>
+                        <label class="label">
+                            <span class="label-text text-base-content">Role</span>
+                        </label>
+                        <select id="profileRole" class="select select-bordered w-full">
+                            <option value="farmer">Farmer</option>
+                            <option value="buyer">Buyer</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label">
+                            <span class="label-text text-base-content">Contact Info</span>
+                        </label>
+                        <textarea id="profileContact" rows="3" placeholder="Phone, Email, etc." class="textarea textarea-bordered w-full"></textarea>
+                    </div>
+                    <div class="flex justify-end mt-4">
+                        <button type="submit" class="btn btn-primary">Save Profile</button>
+                    </div>
+                </form>
+            </div>
+
+            <dialog id="editModal" class="modal">
+                <div class="modal-box p-6 md:p-8">
+                    <h2 class="text-2xl font-bold mb-4 text-base-content">Edit Product</h2>
+                    <form id="editForm" method="dialog">
+                        <input type="hidden" id="editProductId">
+                        <div class="mb-4">
+                            <label class="label">
+                                <span class="label-text text-base-content">Product Name</span>
+                            </label>
+                            <input type="text" id="editProductName" class="input input-bordered w-full" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="label">
+                                <span class="label-text text-base-content">Quantity</span>
+                            </label>
+                            <input type="number" id="editQuantity" class="input input-bordered w-full" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="label">
+                                <span class="label-text text-base-content">Price (GHS)</span>
+                            </label>
+                            <input type="number" id="editPrice" class="input input-bordered w-full" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="label">
+                                <span class="label-text text-base-content">Location</span>
+                            </label>
+                            <input type="text" id="editLocation" class="input input-bordered w-full" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="label">
+                                <span class="label-text text-base-content">Category</span>
+                            </label>
+                            <select id="editCategory" class="select select-bordered w-full" required>
+                                <option value="Crops">Crops</option>
+                                <option value="Livestock">Livestock</option>
+                                <option value="Aquaculture">Aquaculture</option>
+                                <option value="Poultry">Poultry</option>
+                                <option value="Equipment">Farm Equipment</option>
+                                <option value="Chemicals">Farm Chemicals</option>
+                                <option value="Processed">Processed Foods</option>
+                                <option value="Feed">Animal Feed</option>
+                                <option value="Logistics">Logistics & Shipping</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="label">
+                                <span class="label-text text-base-content">Status</span>
+                            </label>
+                            <select id="editStatus" class="select select-bordered w-full" required>
+                                <option value="Harvested">Harvested</option>
+                                <option value="Processed">Processed</option>
+                                <option value="Shipped">Shipped</option>
+                                <option value="Delivered">Delivered</option>
+                                <option value="Available">Available</option>
+                                <option value="Sold">Sold</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="label">
+                                <span class="label-text text-base-content">Description</span>
+                            </label>
+                            <textarea id="editDescription" class="textarea textarea-bordered w-full" rows="3"></textarea>
+                        </div>
+                        <div class="mb-4">
+                            <label class="label">
+                                <span class="label-text text-base-content">Product Image</span>
+                            </label>
+                            <input type="file" id="editProductImage" accept="image/*" class="file-input file-input-bordered w-full">
+                        </div>
+                        <div class="mb-4">
+                            <label class="label">
+                                <span class="label-text text-base-content">Product Video</span>
+                            </label>
+                            <input type="file" id="editProductVideo" accept="video/*" class="file-input file-input-bordered w-full">
+                        </div>
+                        <div class="modal-action flex justify-end gap-2">
+                            <button type="button" class="btn" onclick="editModal.close()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </dialog>
+
+            <div id="messageBox" class="toast toast-end z-50 hidden">
+                <div id="messageText" class="alert"></div>
+            </div>
         </div>
-      </div>
-
-      <!-- Products and Profile -->
-      <div id="products-view">
-        <!-- ... (Keep your existing products-view content exactly as you had it) ... -->
-      </div>
-
-      <div id="profile-view" class="hidden">
-        <!-- ... (Keep your existing profile-view content) ... -->
-      </div>
-
-      <!-- 🚫 Removed edit modal and pencil feature -->
-
-      <!-- ✅ Toast Box with Close Button -->
-      <div id="messageBox" class="toast toast-end z-50 hidden">
-        <div id="messageText" class="alert flex justify-between items-center">
-          <span></span>
-          <button id="messageClose" class="btn btn-xs btn-ghost">✖</button>
-        </div>
-      </div>
     </div>
-  </div>
 
-  <!-- Scripts -->
-  <script src="firebase.js"></script>
-  <script src="auth.js"></script>
-  <script src="products.js"></script>
-  <script src="app.js"></script>
-  <script src="input.js"></script>
+    <script src="firebase.js"></script>
+    <script src="auth.js"></script>
+    <script src="products.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
